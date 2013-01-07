@@ -1,0 +1,26 @@
+{
+    "name": "mouf/archive-installer",
+    "type": "composer-installer",
+    "description": "This is a simple installer that let's you create simple Composer packages that are actually downloading and extracting an archive from the web.",
+    "keywords": ["mouf", "install", "archive", "download"],
+    "homepage": "http://mouf-php.com",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "David Négrier",
+            "email": "d.negrier@thecodingmachine.com",
+            "homepage": "http://mouf-php.com"
+        }
+    ],
+    "require": {
+    	"php": ">=5.3.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "Mouf": "src/"
+        }
+    },
+    "extra" : {
+    	"class": ["Mouf\\Installer\\ArchiveInstaller"]
+    }
+}
