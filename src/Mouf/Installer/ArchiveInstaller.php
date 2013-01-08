@@ -1,6 +1,8 @@
 <?php 
 namespace Mouf\Installer;
 
+use Composer\Composer;
+use Composer\IO\IOInterface;
 use Composer\Installer;
 use Composer\Repository\InstalledRepositoryInterface;
 use Composer\Factory;
