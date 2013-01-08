@@ -35,7 +35,6 @@ class ArchiveInstaller extends LibraryInstaller {
 		$this->rfs = new RemoteFilesystem($io);
 	}
 	
-	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -67,13 +66,19 @@ class ArchiveInstaller extends LibraryInstaller {
 		$extra = $package->getExtra();
 		if (isset($extra['url'])) {
 			$url = $extra['url'];
-				
+			
+			if (isset($extra['omit-first-directory'])) {
+				$omitFirstDirectory = strtolower($extra['omit-first-directory']) == "true";
+			} else {
+				$omitFirstDirectory = false;
+			}
+			
 			if (isset($extra['target-dir'])) {
 				$targetDir = $extra['target-dir'];
 			} else {
 				$targetDir = '.';
 			}
-			$targetDir = './'.trim($targetDir, '/');
+			$targetDir = './'.trim($targetDir, '/').'/';
 			
 			// First, try to detect if the archive has been downloaded
 			// If yes, do nothing.
@@ -102,9 +107,9 @@ class ArchiveInstaller extends LibraryInstaller {
 				
 			// Extract using ZIP downloader
 			if ($extension == 'zip') {
-				$this->extractZip($fileName, $targetDir);
+				$this->extractZip($fileName, $targetDir, $omitFirstDirectory);
 			} elseif ($extension == 'tar' || $extension == 'gz' || $extension == 'bz2') {
-				$this->extractTgz($fileName, $targetDir);
+				$this->extractTgz($fileName, $targetDir, $omitFirstDirectory);
 			}
 			
 			// Delete archive once download is performed
@@ -175,7 +180,7 @@ class ArchiveInstaller extends LibraryInstaller {
 	 * @throws \RuntimeException
 	 * @throws \UnexpectedValueException
 	 */
-	protected function extractZip($file, $path)
+	protected function extractZip($file, $path, $omitFirstDirectory)
 	{
 		if (!class_exists('ZipArchive')) {
 			throw new \RuntimeException('You need the zip extension enabled to use the ZipDownloader');
@@ -187,10 +192,13 @@ class ArchiveInstaller extends LibraryInstaller {
 			throw new \UnexpectedValueException("Unable to open downloaded ZIP file.");
 		}
 	
-		/*if (true !== $zipArchive->extractTo($path)) {
-			throw new \RuntimeException("There was an error extracting the ZIP file. Corrupt file?");
-		}*/
-		$this->extractIgnoringFirstDirectory($zipArchive, $path);
+		if ($omitFirstDirectory) {
+			$this->extractIgnoringFirstDirectory($zipArchive, $path);
+		} else {
+			if (true !== $zipArchive->extractTo($path)) {
+				throw new \RuntimeException("There was an error extracting the ZIP file. Corrupt file?");
+			}
+		}
 
 		$zipArchive->close();
 	}
@@ -218,6 +226,10 @@ class ArchiveInstaller extends LibraryInstaller {
 				$newfilename = $filename;
 			}
 			
+			if (!$newfilename) {
+				continue;
+			}
+			
 			$fp = $zipArchive->getStream($filename);
 			if	(!$fp) {
 				throw new \Exception("Unable to read file $filename from archive.");
@@ -226,6 +238,17 @@ class ArchiveInstaller extends LibraryInstaller {
 			if (!file_exists(dirname($newfilename))) {
 				mkdir(dirname($newfilename), 0777, true);
 			}
+			
+			// If the current file is actually a directory, let's pass.
+			if (strrpos($newfilename, '/') == strlen($newfilename)-1) {
+				continue;
+			}
+			
+			echo "+++";
+			var_dump($filename);
+			var_dump($path.$newfilename);
+			echo "+++";
+			
 			$fpWrite = fopen($path.$newfilename, "wb");
 			
 			while (!feof($fp)) {
@@ -240,7 +263,7 @@ class ArchiveInstaller extends LibraryInstaller {
 	 * @param string $file
 	 * @param string $path
 	 */
-	protected function extractTgz($file, $path)
+	protected function extractTgz($file, $path, $omitFirstDirectory)
 	{
 		// Can throw an UnexpectedValueException
 		$archive = new \PharData($file);
