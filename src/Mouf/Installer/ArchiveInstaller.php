@@ -38,9 +38,9 @@ class ArchiveInstaller extends LibraryInstaller {
 	/**
 	 * {@inheritDoc}
 	 */
-	public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $target)
+	public function update(InstalledRepositoryInterface $repo, PackageInterface $initial, PackageInterface $package)
 	{
-		parent::update($repo, $initial, $target);
+		parent::update($repo, $initial, $package);
 		
 		$this->downloadAndExtractFile($package);
 	}
