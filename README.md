@@ -36,3 +36,11 @@ It assumes that the downloaded file at the URL you pass will never change. Once 
 If the URL changes, it will download the new archive and overwrite any previous files.
 
 If you uninstall the package, the downloaded files will not be removed (it is up to you to do the cleanup).
+
+Working in team
+---------------
+
+You might wonder whether you should commit the downloaded files in your code repository or not.
+
+Actually, it's up to you. You might want to let the other users run *composer install* to download the package, or you might as well commit the files.
+If you commit the files, we strongly suggest that you also commit the *download-status.txt* file too, that you can find at the root of your package. This way, when your team-mates will run *composer install*, the package will not be downloaded again. Of course, the opposite is equally true: if you do not commit the downloaded package, then you should not commit *download-status.txt*.   
