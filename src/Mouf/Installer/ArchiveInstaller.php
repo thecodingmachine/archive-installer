@@ -107,8 +107,10 @@ class ArchiveInstaller extends LibraryInstaller {
 				
 			// Extract using ZIP downloader
 			if ($extension == 'zip') {
+				$this->io->write("    - Extracting <info>" . $fileName . "</info>");
 				$this->extractZip($fileName, $targetDir, $omitFirstDirectory);
 			} elseif ($extension == 'tar' || $extension == 'gz' || $extension == 'bz2') {
+				$this->io->write("    - Extracting <info>" . $fileName . "</info>");
 				$this->extractTgz($fileName, $targetDir, $omitFirstDirectory);
 			}
 			
@@ -244,11 +246,6 @@ class ArchiveInstaller extends LibraryInstaller {
 				continue;
 			}
 			
-			echo "+++";
-			var_dump($filename);
-			var_dump($path.$newfilename);
-			echo "+++";
-			
 			$fpWrite = fopen($path.$newfilename, "wb");
 			
 			while (!feof($fp)) {
@@ -265,6 +262,9 @@ class ArchiveInstaller extends LibraryInstaller {
 	 */
 	protected function extractTgz($file, $path, $omitFirstDirectory)
 	{
+		if ($omitFirstDirectory) {
+			throw new \Exception("Sorry! The omit-first-directory parameter is currently only supported for ZIP files.");
+		}
 		// Can throw an UnexpectedValueException
 		$archive = new \PharData($file);
 		$archive->extractTo($path, null, true);
