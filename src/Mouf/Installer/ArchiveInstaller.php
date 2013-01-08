@@ -178,33 +178,60 @@ class ArchiveInstaller extends LibraryInstaller {
 	protected function extractZip($file, $path)
 	{
 		if (!class_exists('ZipArchive')) {
-			$error = 'You need the zip extension enabled to use the ZipDownloader';
-	
-			// try to use unzip on *nix
-			if (!defined('PHP_WINDOWS_VERSION_BUILD')) {
-				$command = 'unzip '.escapeshellarg($file).' -d '.escapeshellarg($path);
-				if (0 === $this->process->execute($command, $ignoredOutput)) {
-					return;
-				}
-	
-				$error = "Could not decompress the archive, enable the PHP zip extension or install unzip.\n".
-						'Failed to execute ' . $command . "\n\n" . $this->process->getErrorOutput();
-			}
-	
-			throw new \RuntimeException($error);
+			throw new \RuntimeException('You need the zip extension enabled to use the ZipDownloader');
 		}
 	
-		$zipArchive = new ZipArchive();
+		$zipArchive = new \ZipArchive();
 	
 		if (true !== ($retval = $zipArchive->open($file))) {
-			throw new \UnexpectedValueException($this->getErrorMessage($retval, $file));
+			throw new \UnexpectedValueException("Unable to open downloaded ZIP file.");
 		}
 	
-		if (true !== $zipArchive->extractTo($path)) {
+		/*if (true !== $zipArchive->extractTo($path)) {
 			throw new \RuntimeException("There was an error extracting the ZIP file. Corrupt file?");
-		}
-	
+		}*/
+		$this->extractIgnoringFirstDirectory($zipArchive, $path);
+
 		$zipArchive->close();
+	}
+	
+	/**
+	 * Extract the ZIP file, but ignores the first directory of the ZIP file.
+	 * This is useful if you want to extract a ZIP file that contains all the content stored
+	 * in one directory and that you don't want this directory.
+	 * 
+	 * @param unknown $zipArchive
+	 * @param unknown $path
+	 * @throws \Exception
+	 */
+	protected function extractIgnoringFirstDirectory($zipArchive, $path) {
+		for( $i = 0; $i < $zipArchive->numFiles; $i++ ){
+			$stat = $zipArchive->statIndex( $i );
+			
+			$filename = $stat['name'];
+			
+			$pos = strpos($filename, '/');
+			if ($pos !== false) {
+				// The file name, without the the directory
+				$newfilename = substr($filename, $pos+1);
+			} else {
+				$newfilename = $filename;
+			}
+			
+			$fp = $zipArchive->getStream($filename);
+			if	(!$fp) {
+				throw new \Exception("Unable to read file $filename from archive.");
+			}
+			
+			if (!file_exists(dirname($newfilename))) {
+				mkdir(dirname($newfilename), 0777, true);
+			}
+			$fpWrite = fopen($path.$newfilename, "wb");
+			
+			while (!feof($fp)) {
+				fwrite($fpWrite, fread($fp, 65536));
+			}
+		}
 	}
 	
 	/**
