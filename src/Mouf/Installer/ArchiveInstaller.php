@@ -43,7 +43,7 @@ class ArchiveInstaller extends LibraryInstaller {
 	{
 		parent::update($repo, $initial, $target);
 		
-		self::downloadAndExtractFile($package);
+		$this->downloadAndExtractFile($package);
 	}
 	
 	/**
@@ -53,7 +53,7 @@ class ArchiveInstaller extends LibraryInstaller {
 	{
 		parent::install($repo, $package);
 		
-		self::downloadAndExtractFile($package);
+		$this->downloadAndExtractFile($package);
 	}
 	
 	/**
@@ -63,7 +63,7 @@ class ArchiveInstaller extends LibraryInstaller {
 	 * @throws \RuntimeException
 	 * @throws \UnexpectedValueException
 	 */
-	private static function downloadAndExtractFile(PackageInterface $package) {
+	private function downloadAndExtractFile(PackageInterface $package) {
 		$extra = $package->getExtra();
 		if (isset($extra['url'])) {
 			$url = $extra['url'];
@@ -71,9 +71,13 @@ class ArchiveInstaller extends LibraryInstaller {
 			if (isset($extra['target-dir'])) {
 				$targetDir = $extra['target-dir'];
 			} else {
-				$targetDir = 'vendor/'.$package->getName();
+				$targetDir = '.';
 			}
 			$targetDir = trim($targetDir, '/');
+			
+			if (empty($targetDir)) {
+				$targetDir = ".";
+			}
 				
 			// First, try to detect if the archive has been downloaded
 			// If yes, do nothing.
@@ -100,7 +104,7 @@ class ArchiveInstaller extends LibraryInstaller {
 			}
 				
 			// Extract using ZIP downloader
-				
+			
 			// TODO
 				
 			self::setLastDownloadedFileUrl($package, $url);
