@@ -73,12 +73,8 @@ class ArchiveInstaller extends LibraryInstaller {
 			} else {
 				$targetDir = '.';
 			}
-			$targetDir = trim($targetDir, '/');
+			$targetDir = './'.trim($targetDir, '/');
 			
-			if (empty($targetDir)) {
-				$targetDir = ".";
-			}
-				
 			// First, try to detect if the archive has been downloaded
 			// If yes, do nothing.
 			// If no, let's download the package.
@@ -88,6 +84,7 @@ class ArchiveInstaller extends LibraryInstaller {
 				
 			// Download (using code from FileDownloader)
 			$fileName = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_BASENAME);
+			$extension = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
 				
 			if (!extension_loaded('openssl') && 0 === strpos($url, 'https:')) {
 				throw new \RuntimeException('You must enable the openssl extension to download files via https');
@@ -104,9 +101,16 @@ class ArchiveInstaller extends LibraryInstaller {
 			}
 				
 			// Extract using ZIP downloader
+			if ($extension == 'zip') {
+				$this->extractZip($fileName, $targetDir);
+			} elseif ($extension == 'tar' || $extension == 'gz' || $extension == 'bz2') {
+				$this->extractTgz($fileName, $targetDir);
+			}
 			
-			// TODO
+			// Delete archive once download is performed
+			unlink($fileName);
 				
+			// Save last download URL
 			self::setLastDownloadedFileUrl($package, $url);
 		}
 	}
@@ -161,5 +165,58 @@ class ArchiveInstaller extends LibraryInstaller {
 	 */
 	public static function getPackageDir(PackageInterface $package) {
 		return __DIR__."/../../../../../".$package->getName()."/";
+	}
+	
+	/**
+	 * Extract ZIP (copied from Composer's ZipDownloader)
+	 * 
+	 * @param string $file
+	 * @param string $path
+	 * @throws \RuntimeException
+	 * @throws \UnexpectedValueException
+	 */
+	protected function extractZip($file, $path)
+	{
+		if (!class_exists('ZipArchive')) {
+			$error = 'You need the zip extension enabled to use the ZipDownloader';
+	
+			// try to use unzip on *nix
+			if (!defined('PHP_WINDOWS_VERSION_BUILD')) {
+				$command = 'unzip '.escapeshellarg($file).' -d '.escapeshellarg($path);
+				if (0 === $this->process->execute($command, $ignoredOutput)) {
+					return;
+				}
+	
+				$error = "Could not decompress the archive, enable the PHP zip extension or install unzip.\n".
+						'Failed to execute ' . $command . "\n\n" . $this->process->getErrorOutput();
+			}
+	
+			throw new \RuntimeException($error);
+		}
+	
+		$zipArchive = new ZipArchive();
+	
+		if (true !== ($retval = $zipArchive->open($file))) {
+			throw new \UnexpectedValueException($this->getErrorMessage($retval, $file));
+		}
+	
+		if (true !== $zipArchive->extractTo($path)) {
+			throw new \RuntimeException("There was an error extracting the ZIP file. Corrupt file?");
+		}
+	
+		$zipArchive->close();
+	}
+	
+	/**
+	 * Extract tar, tar.gz or tar.bz2 (copied from Composer's TarDownloader)
+	 * 
+	 * @param string $file
+	 * @param string $path
+	 */
+	protected function extractTgz($file, $path)
+	{
+		// Can throw an UnexpectedValueException
+		$archive = new \PharData($file);
+		$archive->extractTo($path, null, true);
 	}
 }
