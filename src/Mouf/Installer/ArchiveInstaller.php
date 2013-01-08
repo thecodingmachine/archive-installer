@@ -1,6 +1,8 @@
 <?php 
 namespace Mouf\Installer;
 
+use Composer\Util\RemoteFilesystem;
+
 use Composer\Composer;
 use Composer\IO\IOInterface;
 use Composer\Installer;
