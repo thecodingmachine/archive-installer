@@ -21,6 +21,9 @@
         }
     },
     "extra" : {
-    	"class": ["Mouf\\Installer\\ArchiveInstaller"]
+    	"class": ["Mouf\\Installer\\ArchiveInstaller"],
+	"mouf": {
+		"logo": "package.png"
+	}
     }
 }
