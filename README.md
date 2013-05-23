@@ -22,7 +22,7 @@ A package implementing the archive installer should contain at least these state
 	}
 	
 Please note that *target-dir* is relative to the root of your project (the directory containing the *composer.json* file).
-If *target-dir* is ommitted, we default to the package's directory.
+If *target-dir* is omitted, we default to the package's directory.
 
 
 The *omit-first-directory* is useful if you download an archive where all the files are contained in one big directory. If you want the files without the container directory, just pass *true* to the *omit-first-directory* parameter (it defaults to false).
